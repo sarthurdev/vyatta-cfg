@@ -288,7 +288,7 @@ start ()
     empty /etc/apt/sources.list
 
     # Generate DHCPv6 DUID
-    gen_duid || log_failure_msg "could not generate DUID"
+    # gen_duid || log_failure_msg "could not generate DUID"
 
     # Mount a temporary filesystem for container networks.
     # Configuration should be loaded from VyOS cli.
