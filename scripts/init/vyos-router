@@ -23,6 +23,27 @@ declare action=$1; shift
 
 declare -x BOOTFILE=$vyatta_sysconfdir/config/config.boot
 
+# Decrypt config
+if [ -f "$BOOTFILE.enc" ]; then
+    NEW_BOOTFILE="/run/vyos-config.boot"
+    $vyos_libexec_dir/vyos-config-encrypt.py "$BOOTFILE.enc" $NEW_BOOTFILE --decrypt --tpm
+
+    if [ $? -ne 0 ]; then
+        if [ -f /dev/tpm0 ]; then
+            echo "WARNING: Failed to decrypt config file with TPM"
+        fi
+
+        # Manual decryption
+        $vyos_libexec_dir/vyos-config-encrypt.py "$BOOTFILE.enc" $NEW_BOOTFILE --decrypt
+        if [ $? -ne 0 ]; then
+            echo "ERROR: Failed to decrypt config file"
+            exit 1
+        fi
+    fi
+
+    declare -x BOOTFILE="$NEW_BOOTFILE"
+fi
+
 # If vyos-config= boot option is present, use that file instead
 for x in $(cat /proc/cmdline); do
     [[ $x = vyos-config=* ]] || continue

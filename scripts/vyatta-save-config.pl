@@ -88,7 +88,14 @@ my $shortened_save_file = get_short_config_path($save_file);
 print "Saving configuration to '$shortened_save_file'...\n";
 
 my $save;
+my $encrypted = 0;
+my $encrypted_path;
 if ($mode eq 'local') {
+    if (-e "$save_file.enc") {
+        $encrypted = 1;
+        $encrypted_path = "$save_file.enc";
+        $save_file = "/run/vyos-config.boot";
+    }
 
     # First check if this file exists, and if so ensure this is a config file.
     if (-e $save_file) {
@@ -121,7 +128,9 @@ select STDOUT;
 fsync $save;
 close $save;
 
-if ($mode eq 'url') {
+if ($mode eq 'local') {
+    system("/usr/libexec/vyos/vyos-config-encrypt.py $save_file $encrypted_path --tpm");
+} elsif ($mode eq 'url') {
     system("python3 -c 'from vyos.remote import upload; upload(\"$url_tmp_file\", \"$save_file\")'");
     system("rm -f $url_tmp_file");
 }
